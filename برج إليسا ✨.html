@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>برج إليسا ✨</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Amiri:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--sky1:#0b0620;--sky2:#2b0f3a;--sky3:#4a1243;--ink:#fff1f7;--soft:#ffc2dc;--accent:#ff7eb3;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:'Tajawal',Tahoma,sans-serif;color:var(--ink);background:radial-gradient(ellipse at 50% 30%,var(--sky3),var(--sky2) 45%,var(--sky1));overflow:hidden;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+.panel{position:fixed;left:14px;right:14px;max-width:520px;margin:0 auto;text-align:center;background:rgba(20,8,36,.62);backdrop-filter:blur(12px);border:1px solid rgba(255,182,213,.28);border-radius:24px;padding:20px 18px;box-shadow:0 0 40px rgba(255,126,179,.18)}
+#intro{top:50%;transform:translateY(-50%);animation:fade 1.2s ease}
+#msgbox{bottom:calc(env(safe-area-inset-bottom,0px) + 16px);display:none;min-height:96px;align-items:center;justify-content:center}
+#msg{font-family:'Amiri',serif;font-size:23px;line-height:1.8;animation:fade .8s ease}
+#hud{position:fixed;top:calc(env(safe-area-inset-top,0px) + 16px);left:0;right:0;text-align:center;color:var(--soft);font-size:16px;display:none}
+#final{bottom:calc(env(safe-area-inset-bottom,0px) + 14px);display:none;max-height:58vh;overflow-y:auto;animation:fade 1.4s ease}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+#intro{--t:translateY(-50%)}
+h1{font-family:'Amiri',serif;font-size:clamp(32px,9vw,44px);margin:0 0 8px;color:var(--accent);text-shadow:0 0 18px rgba(255,126,179,.6)}
+p{margin:0 0 16px;color:var(--soft);font-size:18px;line-height:1.9}
+.letter{color:var(--ink);font-family:'Amiri',serif;font-size:21px;line-height:2}
+button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:13px 30px;color:#fff;background:linear-gradient(135deg,#ff5c9d,#ff9fc4);box-shadow:0 0 22px rgba(255,126,179,.5);cursor:pointer}
+button:active{transform:scale(.96)}
+#wishout{margin-top:12px;font-family:'Amiri',serif;font-size:21px;color:var(--accent);min-height:30px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+
+<div class="panel" id="intro">
+  <h1>في السما برج جديد ✨</h1>
+  <p>ما انكتب في أي كتاب، ولا أحد شافه قبلي.<br>ناقص بس إنتِ تضيئينه يا إليسا 🤍</p>
+  <button id="go">أضيئه</button>
+</div>
+
+<div class="panel" id="msgbox"><div id="msg"></div></div>
+
+<div class="panel" id="final">
+  <h1>برج إليسا 💖</h1>
+  <p class="letter">إلى أغلى إنسانة على قلبي، أنتِ أحلى صدفة صارت في حياتي. وجودك يخلي الأيام العادية مميزة، وكل مكان فيه أنتِ يصير أحلى مكان. أحبك اليوم أكثر من أمس، وأقل من بكرة. خليكِ جنبي دايماً 🤍</p>
+  <button id="wish">تمنّي أمنية 🌠</button>
+  <div id="wishout"></div>
+</div>
+
+<script>
+var MSGS = [
+ "أول نجمة: يوم عرفتك حسيت إن الدنيا صارت أحلى شوي ✨",
+ "ضحكتك… أحلى صوت سمعته أنا 🌸",
+ "كلامك يهدّي قلبي ويفرحه 🤍",
+ "صرت أنتظر رسالتك أكثر من أي شي 💌",
+ "اسمك إليسا… حتى اسمك يشبه النجوم 🌟",
+ "فيك شي يخليني أبتسم بدون سبب 😊",
+ "أتمنى كل يوم يمر نعرف بعض أكثر 🌙",
+ "وجودك يخلي الأيام العادية مميزة 💫",
+ "وكل مكان فيه أنتِ يصير أحلى مكان 🌷",
+ "وأنتِ… أحلى صدفة صارت في حياتي 💖"
+];
+var N = MSGS.length, lit = [], count = 0, started = false, done = false, glow = 0;
+var cv = document.getElementById('c'), ctx = cv.getContext('2d');
+var W, H, S, CX, CY, pts = [], bg = [], shoot = [];
+for (var k = 0; k < N; k++) lit.push(false);
+for (var k = 0; k < 130; k++) bg.push({x:Math.random(), y:Math.random(), r:Math.random()*1.4+.3, sp:Math.random()*2+.6, ph:Math.random()*6.28});
+
+function layout(){
+  var dpr = window.devicePixelRatio || 1;
+  W = innerWidth; H = innerHeight;
+  cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  S = Math.min(W/38, H/52); CX = W/2; CY = H*.34;
+  pts = [];
+  for (var i = 0; i < N; i++){
+    var t = i*2*Math.PI/N;
+    pts.push({x: CX + 16*Math.pow(Math.sin(t),3)*S, y: CY - hy(t)*S, ph: i*.7});
+  }
+}
+function hy(t){ return 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t); }
+addEventListener('resize', layout); layout();
+
+function heartPath(){
+  ctx.beginPath();
+  for (var j = 0; j <= 120; j++){
+    var t = j/120*2*Math.PI, x = CX + 16*Math.pow(Math.sin(t),3)*S, y = CY - hy(t)*S;
+    j ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+  }
+  ctx.closePath();
+}
+
+function draw(ms){
+  var T = ms/1000;
+  ctx.clearRect(0,0,W,H);
+  bg.forEach(function(b){
+    ctx.globalAlpha = .25 + .75*Math.abs(Math.sin(T*b.sp + b.ph));
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(b.x*W, b.y*H, b.r, 0, 6.283); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+  if (done){ glow = Math.min(glow + .006, 1); }
+  if (glow > 0){
+    heartPath();
+    var g = ctx.createRadialGradient(CX,CY,5,CX,CY,S*20);
+    g.addColorStop(0,'rgba(255,126,179,'+(.38*glow)+')'); g.addColorStop(1,'rgba(255,126,179,'+(.05*glow)+')');
+    ctx.fillStyle = g; ctx.fill();
+  }
+  ctx.lineWidth = 1.8; ctx.strokeStyle = 'rgba(255,194,220,.85)';
+  ctx.shadowColor = '#ff7eb3'; ctx.shadowBlur = 10;
+  for (var i = 0; i < N; i++){
+    var j = (i+1)%N;
+    if (lit[i] && lit[j]){ ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y); ctx.stroke(); }
+  }
+  ctx.shadowBlur = 0;
+  for (var i = 0; i < N; i++){
+    var p = pts[i], pulse = Math.sin(T*2.4 + p.ph);
+    if (lit[i]){
+      ctx.shadowColor = '#ff9fc4'; ctx.shadowBlur = 24; ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(p.x,p.y,6.5,0,6.283); ctx.fill(); ctx.shadowBlur = 0;
+    } else if (started){
+      ctx.fillStyle = 'rgba(255,255,255,'+(.55+.3*pulse)+')';
+      ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,6.283); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,182,213,'+(.25+.25*pulse)+')'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(p.x,p.y,13+4*pulse,0,6.283); ctx.stroke();
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      ctx.beginPath(); ctx.arc(p.x,p.y,3.5,0,6.283); ctx.fill();
+    }
+  }
+  shoot = shoot.filter(function(s){ return s.life > 0; });
+  shoot.forEach(function(s){
+    s.x += s.vx; s.y += s.vy; s.life -= .012;
+    var gr = ctx.createLinearGradient(s.x,s.y,s.x - s.vx*14,s.y - s.vy*14);
+    gr.addColorStop(0,'rgba(255,255,255,'+s.life+')'); gr.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.strokeStyle = gr; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(s.x - s.vx*14, s.y - s.vy*14); ctx.stroke();
+  });
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+function shootStar(){
+  shoot.push({x: W*(.4+Math.random()*.6), y: Math.random()*H*.35, vx: -(4+Math.random()*3), vy: 2+Math.random()*2, life: 1});
+}
+setInterval(function(){ if (Math.random() < .35) shootStar(); }, 2500);
+
+var hud = document.getElementById('hud'), box = document.getElementById('msgbox'), msg = document.getElementById('msg');
+function setHud(){ hud.textContent = count < N ? 'المسي النجوم المضيئة ✨  ' + count + ' / ' + N : ''; }
+
+document.getElementById('go').onclick = function(){
+  document.getElementById('intro').style.display = 'none';
+  started = true; hud.style.display = 'block'; setHud();
+  box.style.display = 'flex'; msg.textContent = 'ابدأي من أي نجمة تعجبك 🌙';
+};
+
+cv.addEventListener('pointerdown', function(e){
+  if (!started || done) return;
+  var best = -1, bd = 34;
+  for (var i = 0; i < N; i++){
+    if (lit[i]) continue;
+    var d = Math.hypot(e.clientX - pts[i].x, e.clientY - pts[i].y);
+    if (d < bd){ bd = d; best = i; }
+  }
+  if (best < 0) return;
+  lit[best] = true; count++;
+  msg.style.animation = 'none'; void msg.offsetWidth; msg.style.animation = '';
+  msg.textContent = MSGS[count-1];
+  setHud();
+  if (navigator.vibrate) navigator.vibrate(20);
+  if (count === N) finish();
+});
+
+function finish(){
+  done = true;
+  for (var k = 0; k < 6; k++) setTimeout(shootStar, k*350);
+  setTimeout(function(){
+    box.style.display = 'none'; hud.style.display = 'none';
+    document.getElementById('final').style.display = 'block';
+  }, 3200);
+}
+
+var wishes = ['تمنيت… وإنتِ عارفة وش تمنيت 🤍', 'أمنيتي إنك دايماً جنبي 🌙', 'وتمنيت لك كل الفرح يا قلبي 💖'], wi = 0;
+document.getElementById('wish').onclick = function(){
+  for (var k = 0; k < 8; k++) setTimeout(shootStar, k*160);
+  document.getElementById('wishout').textContent = wishes[wi++ % wishes.length];
+};
+</script>
+</body>
+</html>
